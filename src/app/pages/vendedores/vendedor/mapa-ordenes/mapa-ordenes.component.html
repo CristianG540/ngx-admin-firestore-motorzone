@@ -1,0 +1,27 @@
+<div class="modal-header">
+  <span>Mapa ordenes</span>
+  <button class="close" aria-label="Close" (click)="closeModal()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  <agm-map [latitude]="_lat" [longitude]="_lng" [zoom]="_zoom">
+    <agm-marker
+      *ngFor="let orden of ordenes"
+      (markerClick)="clickedMarker(orden)"
+      [latitude]="orden?.location?.lat"
+      [longitude]="orden?.location?.lon">
+      <agm-info-window>
+        <ul class="perro">
+          <li><b>Id: </b> {{ orden?._id }}</li>
+          <li><b>Cliente: </b> {{ orden?.nitCliente }}</li>
+          <li><b>Fecha: </b> {{ orden?._id | date:'dd-MM-y hh:mm a'}}</li>
+        </ul>
+      </agm-info-window>
+    </agm-marker>
+  </agm-map>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-md btn-primary" (click)="closeModal()">Cerrar</button>
+</div>
+

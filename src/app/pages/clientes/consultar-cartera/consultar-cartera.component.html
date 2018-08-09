@@ -1,0 +1,21 @@
+<div class="row">
+  <div class="col">
+    <nb-card>
+      <nb-card-header>
+        Consultar cartera
+      </nb-card-header>
+      <nb-card-body>
+        <toaster-container [toasterconfig]="_config"></toaster-container>
+        <nb-search hint="Presiona enter" type="rotate-layout" tag="rotate-layout" placeholder="Ingrese NIT..."  ></nb-search>
+        <hr>
+        <div text-center>
+          <h3 *ngIf="totalCliente > 0">NIT: {{ nitCliente }} -- Saldo pendiente: {{ totalCliente | currency:'USD': 'symbol': '1.0-0' }}</h3>
+        </div>
+        <hr>
+        <ng2-smart-table [settings]="settings" [source]="source" >
+        </ng2-smart-table>
+      </nb-card-body>
+    </nb-card>
+  </div>
+</div>
+

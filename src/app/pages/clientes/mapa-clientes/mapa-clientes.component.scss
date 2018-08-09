@@ -1,0 +1,11 @@
+@import '../../../@theme/styles/themes';
+@import '~bootstrap/scss/mixins/breakpoints';
+@import '~@nebular/theme/styles/global/bootstrap/breakpoints';
+
+@include nb-install-component() {
+
+  /deep/ agm-map {
+    width: 100%;
+    height: nb-theme(card-height-large);
+  }
+}

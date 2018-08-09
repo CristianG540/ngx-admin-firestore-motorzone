@@ -1,0 +1,16 @@
+<div class="modal-header">
+  <span>{{ cliente._id }}</span>
+  <button class="close" aria-label="Close" (click)="closeModal()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  latitud: {{ cliente?.ubicacion?.latitud }}
+  longitude: {{ cliente?.ubicacion?.longitud }}
+  <agm-map [latitude]="cliente?.ubicacion?.latitud" [longitude]="cliente?.ubicacion?.longitud">
+    <agm-marker [latitude]="cliente?.ubicacion?.latitud" [longitude]="cliente?.ubicacion?.longitud" [label]="cliente?._id"></agm-marker>
+  </agm-map>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-md btn-primary" (click)="closeModal()">Cerrar</button>
+</div>

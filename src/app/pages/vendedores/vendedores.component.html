@@ -1,0 +1,17 @@
+
+<nb-card>
+  <nb-card-header>
+    <div class="row ">
+      <div class="col">
+        Usuarios
+      </div>
+      <div class="col">
+        <button class="btn btn-outline-primary btn-icon btn-tn float-right" (click)="reloadGrid()" ><i class="ion-refresh">Recargar</i></button>
+      </div>
+    </div>
+  </nb-card-header>
+  <nb-card-body>
+    <ng2-smart-table [settings]="settings" [source]="source" (userRowSelect)="onUserRowSelect($event)">
+    </ng2-smart-table>
+  </nb-card-body>
+</nb-card>

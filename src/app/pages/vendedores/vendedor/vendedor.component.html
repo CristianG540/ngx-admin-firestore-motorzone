@@ -1,0 +1,37 @@
+<nb-card>
+  <nb-card-header>
+    <div class="row">
+      <div class="col">
+        <button class="btn btn-outline-primary btn-icon btn-tn" (click)="back()">
+          <i class="ion-chevron-left"></i>
+        </button>
+      </div>
+      <div class="col">
+      </div>
+    </div>
+    <div class="row text-center">
+      <div class="col">
+        <p>
+          <strong>Usuario:</strong> {{ _params?.username }} </p>
+        <p>
+          <strong>Nombre completo:</strong> {{ _params?.name }} </p>
+      </div>
+      <div class="col">
+        <p>
+          <strong>NIT:</strong> {{ _params?.nitCliente }} </p>
+        <p>
+          <strong>e-mail:</strong> {{ _params?.email }} </p>
+      </div>
+    </div>
+  </nb-card-header>
+  <nb-card-body>
+    <ng2-smart-table [settings]="settings" [source]="source" (userRowSelect)="onUserRowSelect($event)">
+    </ng2-smart-table>
+    <div class="row text-center">
+      <div class="col">
+        <button *ngIf="!_IdAsesor" type="button" class="btn btn-hero-success btn-demo" (click)="activarUsuario()">Activar</button>
+        <button type="button" class="btn btn-hero-primary btn-demo" (click)="verUbicacion()">Ubicacion</button>
+      </div>
+    </div>
+  </nb-card-body>
+</nb-card>

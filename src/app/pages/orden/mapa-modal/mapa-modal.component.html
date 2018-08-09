@@ -1,0 +1,16 @@
+<div class="modal-header">
+  <span>{{ orden._id }}</span>
+  <button class="close" aria-label="Close" (click)="closeModal()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  latitud: {{ orden?.location?.lat }}
+  longitude: {{ orden?.location?.lon }}
+  <agm-map [latitude]="orden?.location?.lat" [longitude]="orden?.location?.lon" [zoom]="zoom">
+    <agm-marker [latitude]="orden?.location?.lat" [longitude]="orden?.location?.lon" [label]="orden?._id"></agm-marker>
+  </agm-map>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-md btn-primary" (click)="closeModal()">Cerrar</button>
+</div>

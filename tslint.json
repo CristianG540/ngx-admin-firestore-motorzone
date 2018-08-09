@@ -1,0 +1,17 @@
+{
+  "extends": "tslint-config-standard",
+  "rules": {
+    "no-duplicate-variable": true,
+    "no-unused-variable": [
+      true
+    ],
+    "rxjs-collapse-imports": true,
+    "rxjs-pipeable-operators-only": true,
+    "rxjs-no-static-observable-methods": true,
+    "rxjs-proper-imports": true
+  },
+  "rulesDirectory": [
+    "node_modules/tslint-eslint-rules/dist/rules",
+    "node_modules/rxjs-tslint"
+  ]
+}

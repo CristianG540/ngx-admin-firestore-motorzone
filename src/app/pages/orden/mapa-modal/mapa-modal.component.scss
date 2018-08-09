@@ -1,0 +1,9 @@
+@import '../../../@theme/styles/themes';
+
+@include nb-install-component() {
+
+  /deep/ agm-map {
+    width: 100%;
+    height: nb-theme(card-height-large);
+  }
+}

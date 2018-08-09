@@ -1,0 +1,33 @@
+// themes - our custom or/and out of the box themes
+@import 'themes';
+
+// framework component themes (styles tied to theme variables)
+@import '~@nebular/theme/styles/globals';
+@import '~@nebular/auth/styles/all';
+
+// loading progress bar theme
+@import './pace.theme';
+
+// install the framework and custom global styles
+@include nb-install() {
+
+  // framework global styles
+  @include nb-theme-global();
+  @include nb-auth-global();
+
+  // loading progress bar
+  @include ngx-pace-theme();
+};
+
+#tbl-buscar-cliente {
+  ng2-st-tbody-edit-delete {
+    display: none !important;
+  }
+  .ng2-smart-actions {
+    padding: 0.875rem 1.25rem;
+  }
+  .ng2-smart-action {
+    display: inline;
+    margin-left: 5px;
+  }
+}
