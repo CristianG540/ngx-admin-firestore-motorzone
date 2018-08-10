@@ -19,17 +19,20 @@ import { NB_AUTH_TOKEN_WRAPPER_TOKEN, NbAuthJWTToken } from '@nebular/auth'
 
 import { AuthGuard } from './auth-guard.service'
 
-import { AngularFireModule } from 'angularfire2'
 import { AngularFireDatabaseModule, AngularFireDatabase } from 'angularfire2/database'
 import { AngularFireAuthModule } from 'angularfire2/auth'
 
+// Libs terceros
+import { AngularFireModule } from 'angularfire2'
+import { AngularFirestoreModule } from 'angularfire2/firestore'
+
 const firebaseConfig = {
-  apiKey: 'AIzaSyDvspmoR6kHwKFxabc2tMgMG9myJdwizNY',
-  authDomain: 'firestore-test-1-todo.firebaseapp.com',
-  databaseURL: 'https://firestore-test-1-todo.firebaseio.com',
-  projectId: 'firestore-test-1-todo',
-  storageBucket: 'firestore-test-1-todo.appspot.com',
-  messagingSenderId: '227096854617'
+  apiKey: 'AIzaSyDz-mE75HwL7w2NerpJLEa_Y6VgWJNKxCE',
+  authDomain: 'motorzone-efef6.firebaseapp.com',
+  databaseURL: 'https://motorzone-efef6.firebaseio.com',
+  projectId: 'motorzone-efef6',
+  storageBucket: 'motorzone-efef6.appspot.com',
+  messagingSenderId: '797056667535'
 }
 
 @NgModule({
@@ -43,6 +46,7 @@ const firebaseConfig = {
     AngularFireModule.initializeApp(firebaseConfig),
     AngularFireDatabaseModule,
     AngularFireAuthModule,
+    AngularFirestoreModule,
     NgbModule.forRoot(),
     ThemeModule.forRoot(),
     CoreModule.forRoot()

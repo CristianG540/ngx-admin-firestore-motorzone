@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http'
 import { Response } from '@angular/http/src/static_response'
-import { Observable } from 'rxjs/Observable'
+import { Observable, combineLatest } from 'rxjs'
 import { map } from 'rxjs/operators'
 import 'rxjs/add/operator/toPromise'
 
@@ -12,8 +12,8 @@ import PouchDB from 'pouchdb'
 import * as PouchUpsert from 'pouchdb-upsert'
 import * as Loki from 'lokijs'
 
-// AngularFire - Firebase
-import { AngularFireDatabase, AngularFireObject } from 'angularfire2/database'
+// AngularFire - Firestore
+import { AngularFirestore, AngularFirestoreDocument, AngularFirestoreCollection } from 'angularfire2/firestore'
 import * as firebase from 'firebase'
 
 // Services
@@ -22,13 +22,11 @@ import { UtilsService } from '../../utils/utils.service'
 import { AllOrdenesInfo } from './models/allOrdenesInfo'
 import { BasicInfoOrden } from './models/basicInfoOrden'
 import { Orden } from '../orden/models/orden'
-import { Subscription } from '../../../../../node_modules/rxjs'
 
 @Injectable()
 export class VendedorService {
 
-  private _FireDB
-  private _remoteBD: PouchDB.Database // Base de datos a la que voy a consultar
+  private usersRef: AngularFirestoreCollection<any>
   private _vendedor: string = '' // Nombre del vendodor al que le voy a consultar las ordenes
 
   /**
@@ -47,10 +45,10 @@ export class VendedorService {
   private _lkIsInit: boolean = false // Este atributo me sirve para verificar si ya cree la instancia de loki
   private _lkIsLoaded: boolean = false // Este atributo me sirve para verificar si ya se hizo la primera carga de datos
 
-  public vendedores: any[] = []
+  public vendedores: any = {}
 
   constructor (
-    private angularFireDB: AngularFireDatabase,
+    private angularFirestoreDB: AngularFirestore,
     protected utils: UtilsService,
     private http: HttpClient
   ) {
@@ -69,30 +67,39 @@ export class VendedorService {
     }
   }
 
-  public initFirebase (): Promise<any> {
-    // Get a reference to the database service
-    this._FireDB = firebase.database()
-    return firebase.database().ref('users/').once('value').then(res => {
-      this.vendedores = res.val()
-      return this.vendedores
+  public initFirebase (): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.usersRef = this.angularFirestoreDB.collection(`users/`)
+      const ordenesObserv1 = this.usersRef.valueChanges().subscribe(
+        users => {
+          const userOrdenesObserv: Observable<any>[] = _.map(users, (user, userKey) => {
+            const ordenesRef: AngularFirestoreCollection<any> = this.angularFirestoreDB.collection(`users/`).doc(user.uid).collection('orders')
+            return ordenesRef.valueChanges().pipe(
+              map(ordenes => {
+                user.ordenes = ordenes
+                return user
+              })
+            )
+          })
+          combineLatest(userOrdenesObserv).subscribe(data => {
+            this.vendedores = users
+            resolve()
+          },
+          err => {
+            console.error('"Error subscribe forkjoin users" - VendedorService|initFirebase() - /app/@core/vendedor/vendedor.service.ts', err)
+            reject(err)
+          })
+        },
+        err => {
+          console.error('"Error subscribe users" - VendedorService|initFirebase() - /app/@core/vendedor/vendedor.service.ts', err)
+          reject(err)
+        }
+      )
     })
   }
 
-  /* public async getOrdenesVendedorOld(ids?: string[]): Promise<any> {
-    const options: any = {
-      include_docs : true,
-    };
-    if (ids) { options.keys = ids; }
-    const vendedor = this._vendedor;
-    const docs = await this._remoteBD.allDocs(options);
-    return {
-      vendedor: vendedor,
-      docs: docs,
-    };
-  } */
-
   public async getOrdenesVendedor (ids?: string[]): Promise<any> {
-
+    console.log('vendedor infooo', this.vendedores)
     if (ids) {
       const ordenes = []
       for (const id of ids) {
@@ -160,7 +167,7 @@ export class VendedorService {
    * @memberof VendedorService
    */
   public async getOrdenesVendedores (): Promise<AllOrdenesInfo[]> {
-
+    console.log('vendedores infooo', this.vendedores)
     // limpio los datos de la coleccion para actualizarlos todos
     // tambien podria hacer un upsert, pero como en este caso
     // no estoy seguro de que valores cambiaron, entonces simplemente
@@ -172,6 +179,8 @@ export class VendedorService {
 
       // tslint:disable-next-line:forin
       for (const vendedorKey in this.vendedores) {
+        debugger
+        const userOrdenesRef = this.angularFirestoreDB.collection(`users/`).doc(this.vendedores[vendedorKey].uid).collection('orders')
 
         const result = await firebase.database().ref(`orders/${this.vendedores[vendedorKey].uid}`).once('value')
 
@@ -247,8 +256,11 @@ export class VendedorService {
   }
 
   public updateUserData (data): Promise<void> {
-    const userRef: AngularFireObject<any> = this.angularFireDB.object(`users/${this._vendedor}`)
-    return userRef.update(data)
+    /* const userRef: AngularFireObject<any> = this.angularFireDB.object(`users/${this._vendedor}`)
+    return userRef.update(data) */
+    return new Promise((res, rej) => {
+      res()
+    })
   }
 
   public updateIdAsesor (asesor: string, idAsesor: string): void {
@@ -295,7 +307,7 @@ export class VendedorService {
   // VOY AQUI CONTINUAR CON EL CAMBIO DE ESTADO DE LAS ORDENES
 
   public async cambiarEstado (idDoc: string, estado: string): Promise<any> {
-
+    /*
     const ordenRef: AngularFireObject<any> = this.angularFireDB.object(`orders/${this._vendedor}/${idDoc}`)
 
     if (estado === 'uploaded') {
@@ -310,16 +322,23 @@ export class VendedorService {
       updated_at: Date.now().toString(),
       estado: estado
     })
+    */
+    return new Promise((res, rej) => {
+      res()
+    })
 
   }
 
   public async eliminarOrden (idDoc: string): Promise<any> {
+    /*
     const res = await this._remoteBD.upsert(idDoc, (orden: any) => {
       orden._deleted = true
       return orden
     })
 
     return res
+    */
+    console.log('Metodo deprecado')
   }
 
   public set bdName (v: string) {
