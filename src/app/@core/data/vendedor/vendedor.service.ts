@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http'
 import { Response } from '@angular/http/src/static_response'
-import { Observable, combineLatest } from 'rxjs'
+import { Observable, combineLatest, Subject, BehaviorSubject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import 'rxjs/add/operator/toPromise'
 
@@ -26,9 +26,10 @@ import { Orden } from '../orden/models/orden'
 @Injectable()
 export class VendedorService {
 
+  // Referencia a la coleccion de usuarios en firestore
   private usersRef: AngularFirestoreCollection<any>
-  private _vendedor: string = '' // Nombre del vendodor al que le voy a consultar las ordenes
-
+  // id unico del usuario al que le voy a consultar las ordenes
+  private _vendedor: string = ''
   /**
    * En esta variable guardo una instancia de lokiDB,
    * lo que hago mas o menos es gurdar en esta bd en memoria es un
@@ -44,8 +45,17 @@ export class VendedorService {
   private _lkOrdenesInfoTbl: Loki.Collection
   private _lkIsInit: boolean = false // Este atributo me sirve para verificar si ya cree la instancia de loki
   private _lkIsLoaded: boolean = false // Este atributo me sirve para verificar si ya se hizo la primera carga de datos
-
-  public vendedores: any = {}
+  /**
+   * Guardo un array con los vendedores y sus ordenes
+   * este array esta sujeto a un observador de firestore por lo que sus valores
+   * son en tiempo real
+   */
+  public vendedores: any[]
+  /**
+   * Este subeject se encarga de informar a lo que se subscriba a el
+   * cuando los datos de los usuarios estan listo
+   */
+  public vendedorServIsInit$: BehaviorSubject<any[] | null>
 
   constructor (
     private angularFirestoreDB: AngularFirestore,
@@ -67,11 +77,12 @@ export class VendedorService {
     }
   }
 
-  public initFirebase (): Promise<void> {
+  public initFirebase (): Promise<any[]> {
     return new Promise((resolve, reject) => {
       this.usersRef = this.angularFirestoreDB.collection(`users/`)
       const ordenesObserv1 = this.usersRef.valueChanges().subscribe(
         users => {
+
           const userOrdenesObserv: Observable<any>[] = _.map(users, (user, userKey) => {
             const ordenesRef: AngularFirestoreCollection<any> = this.angularFirestoreDB.collection(`users/`).doc(user.uid).collection('orders')
             return ordenesRef.valueChanges().pipe(
@@ -81,14 +92,19 @@ export class VendedorService {
               })
             )
           })
+          /**
+           * El combine last es como el fork join, solo que este no espera a que la subscripciones terminen
+           */
           combineLatest(userOrdenesObserv).subscribe(data => {
-            this.vendedores = users
-            resolve()
+            console.log('cambios en el stream', data)
+            this.vendedores = data
+            resolve(data)
           },
           err => {
-            console.error('"Error subscribe forkjoin users" - VendedorService|initFirebase() - /app/@core/vendedor/vendedor.service.ts', err)
+            console.error('"Error subscribe combineLatest users" - VendedorService|initFirebase() - /app/@core/vendedor/vendedor.service.ts', err)
             reject(err)
           })
+
         },
         err => {
           console.error('"Error subscribe users" - VendedorService|initFirebase() - /app/@core/vendedor/vendedor.service.ts', err)
@@ -98,35 +114,37 @@ export class VendedorService {
     })
   }
 
-  public async getOrdenesVendedor (ids?: string[]): Promise<any> {
+  public getOrdenesVendedor (ids?: string[]): any {
+
     console.log('vendedor infooo', this.vendedores)
+    const keyVendedorthis = this.utils.binarySearch(this.vendedores, 'uid', this._vendedor)
     if (ids) {
-      const ordenes = []
+      const newOrdenes = []
+      const ordenes = this.vendedores[keyVendedorthis].ordenes
       for (const id of ids) {
-        const orden = await firebase.database().ref(`orders/${this._vendedor}/${id}`).once('value')
-        ordenes.push(orden.val())
+        const ordenKey = this.utils.binarySearch(ordenes, '_id', id)
+        newOrdenes.push(ordenes[ordenKey])
       }
 
       return {
         vendedor: this._vendedor,
-        ordenes: ordenes
+        ordenes: newOrdenes
       }
 
     }
-
-    const ordenes = await firebase.database().ref(`orders/${this._vendedor}`).once('value')
     return {
       vendedor: this._vendedor,
-      ordenes: ordenes
+      ordenes: this.vendedores[keyVendedorthis].ordenes
     }
   }
 
-  public async formatOrdenesVendedor (): Promise<any> {
-    const ordenesUsuario = await this.getOrdenesVendedor() // traigo todas las ordenes del vendedor
+  public formatOrdenesVendedor (): any {
+
+    const ordenesUsuario = this.getOrdenesVendedor() // traigo todas las ordenes del vendedor
     const ordenesUbicacion: Orden[] = []
 
-    const ordenes = _.map(ordenesUsuario.ordenes.val(), (orden: any) => {
-
+    const ordenes = _.map(ordenesUsuario.ordenes, (orden: any) => {
+      // debugger
       if (_.has(orden, 'accuracy')) {
         ordenesUbicacion.push(orden)
       }
@@ -163,11 +181,10 @@ export class VendedorService {
    * a un vendedor y la cantidad de ordenes que ha hecho, la cantidad de ordenes con errores
    * y la cantidad de ordenes pendientes y revisadas
    *
-   * @returns {Promise<any>}
+   * @returns {AllOrdenesInfo[]}
    * @memberof VendedorService
    */
-  public async getOrdenesVendedores (): Promise<AllOrdenesInfo[]> {
-    console.log('vendedores infooo', this.vendedores)
+  public getOrdenesVendedores (): AllOrdenesInfo[] {
     // limpio los datos de la coleccion para actualizarlos todos
     // tambien podria hacer un upsert, pero como en este caso
     // no estoy seguro de que valores cambiaron, entonces simplemente
@@ -175,140 +192,93 @@ export class VendedorService {
     // creo q asi gano un poco mas de performance
     this._lkOrdenesInfoTbl.clear()
 
-    try {
+    if (this.vendedores) {
+      try {
 
-      // tslint:disable-next-line:forin
-      for (const vendedorKey in this.vendedores) {
-        debugger
-        const userOrdenesRef = this.angularFirestoreDB.collection(`users/`).doc(this.vendedores[vendedorKey].uid).collection('orders')
+        // tslint:disable-next-line:forin
+        for (const vendedor of this.vendedores) {
 
-        const result = await firebase.database().ref(`orders/${this.vendedores[vendedorKey].uid}`).once('value')
+          let htmlErrores = '0' // aqui guardo un html q basicamente en capsula el numero de errores en un badge
+          const ordenesErr = [] // aqui guardo las ordenes que tienen errores de cada vendedor
+          const ordenesPend = [] // aqui guardo las ordenes pendientes, osea las ordenes que aun no se han enviado a sap
+          const ordenesVistas = [] // guardo las ordenes marcadas como vistas en la pag de administrador dio-brando
 
-        let htmlErrores = '0' // aqui guardo un html q basicamente en capsula el numero de errores en un badge
-        const ordenesErr = [] // aqui guardo las ordenes que tienen errores de cada vendedor
-        const ordenesPend = [] // aqui guardo las ordenes pendientes, osea las ordenes que aun no se han enviado a sap
-        const ordenesVistas = [] // guardo las ordenes marcadas como vistas en la pag de administrador dio-brando
+          if (vendedor.ordenes) {
 
-        if (result.val()) {
-
-          const ordenes = result.val()
-          // tslint:disable-next-line:forin
-          for (const ordenKey in ordenes) {
-            /*
-             * si un pedido no tiene docEntry esta variable pasa a ser "true",
-             * el hecho de q un pedido no tenga docEntry casi siempre significa
-             * que esta pendiente, no ha subido a sap
-            */
-
-            const hasntDocEntry: boolean = !_.has(ordenes[ordenKey], 'docEntry') || ordenes[ordenKey].docEntry === ''
-            // si el pedido tiene un error esta variable pasa a true
-            const hasError: boolean = _.has(ordenes[ordenKey], 'error') && ordenes[ordenKey].error
-            // Verifico si la orden de la posicion actual tiene un error y la meto en el array respectivo
-            if (hasError) {
-              ordenesErr.push(ordenes[ordenKey])
-            }
-            // Verifico si la orden esta pendiente y no tiene errores
-            if (hasntDocEntry && String(ordenes[ordenKey].estado) !== 'uploaded') {
-              if (!hasError) {
-                ordenesPend.push(ordenes[ordenKey])
+            const ordenes = vendedor.ordenes
+            // tslint:disable-next-line:forin
+            for (const orden of ordenes) {
+              /*
+               * si un pedido no tiene docEntry esta variable pasa a ser "true",
+               * el hecho de q un pedido no tenga docEntry casi siempre significa
+               * que esta pendiente, no ha subido a sap
+              */
+              const hasntDocEntry: boolean = !_.has(orden, 'docEntry') || orden.docEntry === ''
+              // si el pedido tiene un error esta variable pasa a true
+              const hasError: boolean = _.has(orden, 'error') && orden.error
+              // Verifico si la orden de la posicion actual tiene un error y la meto en el array respectivo
+              if (hasError) {
+                ordenesErr.push(orden)
               }
+              // Verifico si la orden esta pendiente y no tiene errores
+              if (hasntDocEntry && String(orden.estado) !== 'uploaded') {
+                if (!hasError) {
+                  ordenesPend.push(orden)
+                }
+              }
+              // verifico si la orden esta marcada como vista
+              if (String(orden.estado) === 'seen') { ordenesVistas.push(orden) }
+
             }
-            // verifico si la orden esta marcada como vista
-            if (String(ordenes[ordenKey].estado) === 'seen') { ordenesVistas.push(ordenes[ordenKey]) }
 
+            if (ordenesErr.length - ordenesVistas.length > 0) {
+              htmlErrores = `<span class="badge badge-danger">${ordenesErr.length - ordenesVistas.length}</span>`
+            }
+
+            this._lkOrdenesInfoTbl.insert({
+              'vendedor': vendedor.email,
+              'idAsesor': vendedor.idAsesor,
+              'vendedorData': vendedor,
+              'numOrdenes': Object.keys(ordenes).length,
+              'numOrdenesErr': htmlErrores,
+              'numOrdenesPend': ordenesPend.length,
+              'numOrdenesVistas': ordenesVistas.length
+            })
+
+          } else {
+            this._lkOrdenesInfoTbl.insert({
+              'vendedor': vendedor.email,
+              'idAsesor': vendedor.idAsesor ? vendedor.idAsesor : `<span class="badge badge-danger">Inactivo</span>`,
+              'vendedorData': vendedor,
+              'numOrdenes': 0,
+              'numOrdenesErr': 0,
+              'numOrdenesPend': 0,
+              'numOrdenesVistas': 0
+            })
           }
 
-          if (ordenesErr.length - ordenesVistas.length > 0) {
-            htmlErrores = `<span class="badge badge-danger">${ordenesErr.length - ordenesVistas.length}</span>`
-          }
-
-          this._lkOrdenesInfoTbl.insert({
-            'vendedor': this.vendedores[vendedorKey].email,
-            'idAsesor': this.vendedores[vendedorKey].idAsesor,
-            'vendedorData': this.vendedores[vendedorKey],
-            'numOrdenes': Object.keys(ordenes).length,
-            'numOrdenesErr': htmlErrores,
-            'numOrdenesPend': ordenesPend.length,
-            'numOrdenesVistas': ordenesVistas.length
-          })
-
-        } else {
-          this._lkOrdenesInfoTbl.insert({
-            'vendedor': this.vendedores[vendedorKey].email,
-            'idAsesor': this.vendedores[vendedorKey].idAsesor ? this.vendedores[vendedorKey].idAsesor : `<span class="badge badge-danger">Inactivo</span>`,
-            'vendedorData': this.vendedores[vendedorKey],
-            'numOrdenes': 0,
-            'numOrdenesErr': 0,
-            'numOrdenesPend': 0,
-            'numOrdenesVistas': 0
-          })
         }
 
+      } catch (err) {
+        console.error('error al recuperar las ordenes de los vendedores', err)
+        window.alert('Error al recuperar las ordenes de los vendedores')
       }
 
-    } catch (err) {
-      console.error('error al recuperar las ordenes de los vendedores', err)
-      window.alert('Error al recuperar las ordenes de los vendedores')
+      return this.allOrdenesInfo
     }
 
-    this._lkIsLoaded = true
-    return this.allOrdenesInfo
+    return []
+
   }
 
   public updateUserData (data): Promise<void> {
-    /* const userRef: AngularFireObject<any> = this.angularFireDB.object(`users/${this._vendedor}`)
-    return userRef.update(data) */
-    return new Promise((res, rej) => {
-      res()
-    })
+    const userRef: AngularFirestoreDocument<any> = this.angularFirestoreDB.doc<any>(`users/${this._vendedor}`)
+    return userRef.update(data)
   }
-
-  public updateIdAsesor (asesor: string, idAsesor: string): void {
-    const asesorDoc: any = this._lkOrdenesInfoTbl.findOne({ 'vendedor': asesor })
-    asesorDoc.vendedorData.idAsesor = asesorDoc.idAsesor = idAsesor
-  }
-
-  /**
-   * Performs an upsert.
-   * This means performing an update if the record exists, or performing an
-   * insert if it doesn't.
-   * LokiJS (as at version 1.2.5) lacks this function.
-   * TODO: Remove this function when LokiJS has built-in support for upserts.
-   * @param {object} collection - The target DB collection.
-   * @param {string} idField - The field which contains the record's unique ID.
-   * @param {object} record - The record to be upserted.
-   * @depends lodash
-   * @example
-   * this._lkUpsert(coleccion_objetivo, 'nombre_campo_unico_coleccion', {
-   *   'nombre_campo_unico_coleccion' : '123457',
-   *   'propietario'                  : 'marcos',
-   *   'telefono'                     : 21232131
-   * });
-   */
-  private _lkUpsert (collection: Loki.Collection, idField, record): void {
-    const existingRecord = collection.by(idField, record[idField])
-    if (existingRecord) {
-      // The record exists. Do an update.
-      const updatedRecord = existingRecord
-      // Only update the fields contained in `record`. All fields not contained
-      // in `record` remain unchanged.
-      for (const key in record) {
-        if (record.hasOwnProperty(key)) {
-          updatedRecord[key] = record[key]
-        }
-      }
-      collection.update(updatedRecord)
-    } else {
-      // The record doesn't exist. Do an insert.
-      collection.insert(record)
-    }
-  }
-
-  // VOY AQUI CONTINUAR CON EL CAMBIO DE ESTADO DE LAS ORDENES
 
   public async cambiarEstado (idDoc: string, estado: string): Promise<any> {
-    /*
-    const ordenRef: AngularFireObject<any> = this.angularFireDB.object(`orders/${this._vendedor}/${idDoc}`)
+
+    const ordenRef: AngularFirestoreDocument<any> = this.angularFirestoreDB.collection(`users/`).doc(this._vendedor).collection('orders').doc(idDoc)
 
     if (estado === 'uploaded') {
       return await ordenRef.update({
@@ -321,10 +291,6 @@ export class VendedorService {
     return await ordenRef.update({
       updated_at: Date.now().toString(),
       estado: estado
-    })
-    */
-    return new Promise((res, rej) => {
-      res()
     })
 
   }
@@ -347,10 +313,6 @@ export class VendedorService {
 
   public get lkIsInit (): boolean {
     return this._lkIsInit
-  }
-
-  public get lkIsLoaded (): boolean {
-    return this._lkIsLoaded
   }
 
   public get allOrdenesInfo (): AllOrdenesInfo[] {

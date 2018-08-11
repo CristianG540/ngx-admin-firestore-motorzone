@@ -1,12 +1,16 @@
-import { Component, OnInit, OnDestroy } from '@angular/core'
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { Location } from '@angular/common'
 import { LocalDataSource } from 'ng2-smart-table'
-import 'rxjs/add/operator/switchMap'
-import { Observable } from 'rxjs/Observable'
-import { Subscription } from 'rxjs/Subscription'
+
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { MapaOrdenesComponent } from './mapa-ordenes/mapa-ordenes.component'
+
+// Rxjs
+import { Subscription } from 'rxjs'
+import { switchMap, map } from 'rxjs/operators'
+
+// Libs terceros
 import Swal from 'sweetalert2'
 
 // AngularFire - Firebase
@@ -89,25 +93,27 @@ export class VendedorComponent implements OnInit, OnDestroy {
     private activatedRoute: ActivatedRoute,
     private router: Router,
     private location: Location,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private zone: NgZone
   ) {}
 
   ngOnInit () {
-    this._paramsSub = this.activatedRoute.queryParams.subscribe(params => {
+    this._paramsSub = this.activatedRoute.queryParams.pipe(
+      switchMap(params => this.vendedoresService.vendedorServIsInit$.pipe(map(users => users ? params : null)))
+    ).subscribe(params => {
+      if (params) {
+        this.zone.run(() => {
+          this._vendedor = params.name
+          this._IdAsesor = params.idAsesor
+          this.vendedoresService.bdName = params.uid
+          this._params = params
 
-      this._vendedor = params.name
-      this._IdAsesor = params.idAsesor
-      this.vendedoresService.bdName = params.uid
-      this._params = params
-
-      this.vendedoresService.formatOrdenesVendedor().then(res => {
-        console.log('ordenes vendedor', res.ordenesInfo)
-        this._ordenesGps = res.ordenesGps
-        this.source.load(res.ordenesInfo)
-      }).catch(err => {
-        console.error('Me cago en la puta errror', err)
-      })
-
+          const data = this.vendedoresService.formatOrdenesVendedor()
+          console.log('ordenes vendedor', data.ordenesInfo)
+          this._ordenesGps = data.ordenesGps
+          this.source.load(data.ordenesInfo)
+        })
+      }
     })
   }
 
@@ -153,7 +159,6 @@ export class VendedorComponent implements OnInit, OnDestroy {
         })
 
         this._IdAsesor = idAsesor
-        this.vendedoresService.updateIdAsesor(this._params.email, idAsesor)
         this.location.back()
 
       } catch (error) {

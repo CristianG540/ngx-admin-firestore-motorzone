@@ -6,10 +6,10 @@
  * @interface BasicInfoOrden
  */
 export interface BasicInfoOrden {
-  id: number;
-  cliente: string;
-  created_at: string;
-  total: number;
-  cantItems: number;
-  estado: string;
+  id: number
+  cliente: string
+  created_at: string
+  total: number
+  cantItems: number
+  estado: string
 }

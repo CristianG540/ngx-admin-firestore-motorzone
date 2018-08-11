@@ -1,9 +1,13 @@
-import { Component, OnInit, OnDestroy, AfterViewChecked } from '@angular/core'
+import { Component, OnInit, OnDestroy, AfterViewChecked, NgZone } from '@angular/core'
 import { Location } from '@angular/common'
 import { Router, ActivatedRoute } from '@angular/router'
-import { Subscription } from 'rxjs/Subscription'
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { MapaModalComponent } from './mapa-modal/mapa-modal.component'
+
+// Rxjs
+import { Subscription } from 'rxjs'
+import { switchMap, map } from 'rxjs/operators'
+
 // Services
 import { VendedorService } from '../../@core/data/vendedor/vendedor.service'
 // Models
@@ -28,22 +32,29 @@ export class OrdenComponent implements OnInit, OnDestroy, AfterViewChecked {
     private modalService: NgbModal,
     private activatedRoute: ActivatedRoute,
     private router: Router,
-    private location: Location
+    private location: Location,
+    private zone: NgZone
   ) {}
 
   ngOnInit () {
-    this._paramsSub = this.activatedRoute.params.subscribe(params => {
-      console.log('EL hpta id', params)
-      this._idOrden = params['id']
-      this.vendedoresService.bdName = this._vendedor = params['vendedor']
-      this.vendedoresService.getOrdenesVendedor([params['id']]).then((res) => {
-        const ordenes = res.ordenes
-        console.log('Datos orden', ordenes[0])
-        this._orden = ordenes[0]
-        this._error = (this._orden.error) ? JSON.parse(this._orden.error) : ''
-      }).catch(err => {
-        console.error('error ngOnInit orden.component.ts', err)
-      })
+    this._paramsSub = this._paramsSub = this.activatedRoute.params.pipe(
+      switchMap(params => this.vendedoresService.vendedorServIsInit$.pipe(map(users => users ? params : null)))
+    ).subscribe(params => {
+
+      if (params) {
+        console.log('EL hpta id', params)
+        this.zone.run(() => {
+          this._idOrden = params['id']
+          this.vendedoresService.bdName = this._vendedor = params['vendedor']
+
+          const data = this.vendedoresService.getOrdenesVendedor([params['id']])
+          const ordenes = data.ordenes
+          console.log('Datos orden', ordenes[0])
+          this._orden = ordenes[0]
+          this._error = (this._orden.error) ? JSON.parse(this._orden.error) : ''
+        })
+      }
+
     })
   }
 

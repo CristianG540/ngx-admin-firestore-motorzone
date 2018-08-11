@@ -1,4 +1,4 @@
-import { Component } from '@angular/core'
+import { Component, OnInit } from '@angular/core'
 import { LocalDataSource } from 'ng2-smart-table'
 import { Router } from '@angular/router'
 
@@ -10,7 +10,7 @@ import { UtilsService } from '../../@core/utils/utils.service'
   selector: 'ngx-vendedores',
   templateUrl: './vendedores.component.html'
 })
-export class VendedoresComponent {
+export class VendedoresComponent implements OnInit {
 
   /**
    * objeto de configuracion para ng2-smart-table
@@ -72,23 +72,16 @@ export class VendedoresComponent {
     private util: UtilsService,
     private router: Router
   ) {
-    if (this.vendedoresService.lkIsLoaded) {
-      this.source.load(this.vendedoresService.allOrdenesInfo)
-    } else {
-      // tslint:disable-next-line:variable-name
-      const loading_screen: any = this.util.showPleaseWait()
+    // tslint:disable-next-line:variable-name
+    // const loading_screen: any = this.util.showPleaseWait()
+    // loading_screen.finish()
+    const ordenes = this.vendedoresService.getOrdenesVendedores()
+    this.source.load(ordenes)
+  }
 
-      this.vendedoresService.initFirebase().then(res => {
-        return this.vendedoresService.getOrdenesVendedores()
-      }).then(res => {
-        console.log('Consulta-Info Ordenes por vendedor', res)
-        this.source.load(res)
-        loading_screen.finish()
-      }).catch(err => {
-        loading_screen.finish()
-        console.error('La puta madre no funciona', err)
-      })
-    }
+  ngOnInit () {
+    // Agrego un setInterval para hacer un machetazo de tiempo real al cargar el grid
+    setInterval(() => this.source.load(this.vendedoresService.getOrdenesVendedores()), 1000)
   }
 
   private onUserRowSelect (evt): void {
