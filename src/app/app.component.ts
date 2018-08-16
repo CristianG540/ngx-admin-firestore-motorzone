@@ -6,10 +6,12 @@
 import { Component, OnInit } from '@angular/core'
 import { AnalyticsService } from './@core/utils/analytics.service'
 import { Subject, BehaviorSubject } from 'rxjs'
+import { environment } from '../environments/environment'
 
-// AngularFire - Firebase
+// Libs terceros
 import { AngularFireDatabase, AngularFireObject } from 'angularfire2/database'
 import { AngularFireAuth } from 'angularfire2/auth'
+import * as mapboxgl from 'mapbox-gl'
 
 // Services
 import { VendedorService } from './@core/data/vendedor/vendedor.service'
@@ -26,7 +28,7 @@ export class AppComponent implements OnInit {
     private angularFireDB: AngularFireDatabase,
     private vendedoresService: VendedorService
   ) {
-
+    (mapboxgl as any).accessToken = environment.mapbox.accessToken
     this.vendedoresService.vendedorServIsInit$ = new BehaviorSubject(null)
     this.angularFireAuth.auth.signInAndRetrieveDataWithEmailAndPassword(
       'c@c.com',

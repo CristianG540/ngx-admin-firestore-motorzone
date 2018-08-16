@@ -5,6 +5,7 @@ import { LocalDataSource } from 'ng2-smart-table'
 
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap'
 import { MapaOrdenesComponent } from './mapa-ordenes/mapa-ordenes.component'
+import { MapBoxOrdenesComponent } from './map-box-ordenes/map-box-ordenes.component'
 
 // Rxjs
 import { Subscription } from 'rxjs'
@@ -133,6 +134,11 @@ export class VendedorComponent implements OnInit, OnDestroy {
   private verUbicacion (): void {
     const activeModal = this.modalService.open(MapaOrdenesComponent, { size: 'lg', container: 'nb-layout' })
     activeModal.componentInstance.ordenes = this._ordenesGps
+  }
+
+  private verUbicacion2 (): void {
+    const activeModal = this.modalService.open(MapBoxOrdenesComponent, { size: 'lg', container: 'nb-layout' })
+    activeModal.componentInstance.userId = this._vendedor
   }
 
   private async activarUsuario (): Promise<void> {

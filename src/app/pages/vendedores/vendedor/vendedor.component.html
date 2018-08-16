@@ -31,6 +31,7 @@
       <div class="col">
         <button *ngIf="!_IdAsesor" type="button" class="btn btn-hero-success btn-demo" (click)="activarUsuario()">Activar</button>
         <button type="button" class="btn btn-hero-primary btn-demo" (click)="verUbicacion()">Ubicacion</button>
+        <button *ngIf="vendedoresService.bdName" type="button" class="btn btn-hero-primary btn-demo" (click)="verUbicacion2()">Ubicacion 2</button>
       </div>
     </div>
   </nb-card-body>

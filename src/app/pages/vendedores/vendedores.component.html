@@ -11,7 +11,7 @@
     </div>
   </nb-card-header>
   <nb-card-body>
-    <ng2-smart-table [settings]="settings" [source]="source" (userRowSelect)="onUserRowSelect($event)">
+    <ng2-smart-table id="tbl-vendedores" [settings]="settings" [source]="source" (userRowSelect)="onUserRowSelect($event)" (custom)="onCustom($event)">
     </ng2-smart-table>
   </nb-card-body>
 </nb-card>

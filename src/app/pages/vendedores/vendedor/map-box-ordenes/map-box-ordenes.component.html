@@ -1,0 +1,27 @@
+<div class="modal-header">
+  <span>Mapa ordenes</span>
+  <button class="close" aria-label="Close" (click)="closeModal()">
+    <span aria-hidden="true">&times;</span>
+  </button>
+</div>
+<div class="modal-body">
+  <nb-card-body>
+    <form>
+      <div class="form-row">
+        <div class="form-group col-md-6">
+          <label for="inputEmail4">Fecha</label>
+          <input id="date" type="date" class="form-control" name="date">
+        </div>
+        <div class="form-group col-md-6">
+          <label for="inputPassword4">Password</label>
+          <input type="password" class="form-control" id="inputPassword4" placeholder="Password">
+        </div>
+      </div>
+    </form>
+  </nb-card-body>
+  <div id='map'></div>
+</div>
+<div class="modal-footer">
+  <button class="btn btn-md btn-primary" (click)="closeModal()">Cerrar</button>
+</div>
+

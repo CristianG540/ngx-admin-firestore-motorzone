@@ -31,3 +31,16 @@
     margin-left: 5px;
   }
 }
+
+#tbl-vendedores {
+  ng2-st-tbody-edit-delete {
+    display: none !important;
+  }
+  .ng2-smart-actions {
+    padding: 0.875rem 1.25rem;
+  }
+  .ng2-smart-action {
+    display: inline;
+    margin-left: 5px;
+  }
+}

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http'
 import { Response } from '@angular/http/src/static_response'
-import { Observable, combineLatest, Subject, BehaviorSubject } from 'rxjs'
+import { Observable, combineLatest, Subject, BehaviorSubject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import 'rxjs/add/operator/toPromise'
 
@@ -28,6 +28,8 @@ export class VendedorService {
 
   // Referencia a la coleccion de usuarios en firestore
   private usersRef: AngularFirestoreCollection<any>
+  // Referencia a la coleccion con las coordenadas marcadas por el usuario
+  private userCoordsSubscription: Subscription
   // id unico del usuario al que le voy a consultar las ordenes
   private _vendedor: string = ''
   /**
@@ -51,6 +53,7 @@ export class VendedorService {
    * son en tiempo real
    */
   public vendedores: any[]
+  public userCoords: any[]
   /**
    * Este subeject se encarga de informar a lo que se subscriba a el
    * cuando los datos de los usuarios estan listo
@@ -307,8 +310,28 @@ export class VendedorService {
     console.log('Metodo deprecado')
   }
 
+  public getUserCoords (): void {
+    const userCoordsRef = this.angularFirestoreDB.collection(`users/`).doc(this._vendedor).collection('liveCoordinates')
+    this.userCoordsSubscription = userCoordsRef
+      .valueChanges()
+      .subscribe(data => {
+        this.userCoords = data
+      },
+      err => {
+        console.error('"Error subscribe liveCoordinates users" - VendedorService|getUserCoords() - /app/@core/vendedor/vendedor.service.ts', err)
+      })
+  }
+
+  public get userCoordsRef (): AngularFirestoreCollection<any> {
+    return this.angularFirestoreDB.collection(`users/`).doc(this._vendedor).collection('liveCoordinates')
+  }
+
   public set bdName (v: string) {
     this._vendedor = v
+  }
+
+  public get bdName (): string {
+    return this._vendedor
   }
 
   public get lkIsInit (): boolean {
