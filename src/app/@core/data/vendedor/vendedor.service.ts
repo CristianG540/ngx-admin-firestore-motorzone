@@ -206,7 +206,7 @@ export class VendedorService {
           const ordenesPend = [] // aqui guardo las ordenes pendientes, osea las ordenes que aun no se han enviado a sap
           const ordenesVistas = [] // guardo las ordenes marcadas como vistas en la pag de administrador dio-brando
 
-          if (vendedor.ordenes) {
+          if (vendedor.ordenes > 0) {
 
             const ordenes = vendedor.ordenes
             // tslint:disable-next-line:forin
@@ -249,6 +249,7 @@ export class VendedorService {
             })
 
           } else {
+
             this._lkOrdenesInfoTbl.insert({
               'vendedor': vendedor.email,
               'idAsesor': vendedor.idAsesor ? vendedor.idAsesor : `<span class="badge badge-danger">Inactivo</span>`,
