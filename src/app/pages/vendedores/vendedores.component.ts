@@ -21,13 +21,7 @@ export class VendedoresComponent implements OnInit {
       columnTitle: 'Acciones',
       add: false,
       edit : false,
-      delete : false,
-      custom: [
-        {
-          name: 'gmap',
-          title: '<i class="nb-location"></i>'
-        }
-      ]
+      delete : false
     },
     add: {
       addButtonContent: '<i class="nb-plus"></i>',
@@ -110,17 +104,6 @@ export class VendedoresComponent implements OnInit {
       loading_screen.finish()
       console.error('La puta madre no funciona', err)
     })*/
-  }
-
-  onCustom (event) {
-    console.log(`Custom event '${event.action}' fired on row №:`, event.data)
-    switch (event.action) {
-      case 'gmap':
-        alert('perro ieuta')
-        break
-      default:
-        break
-    }
   }
 
 }
