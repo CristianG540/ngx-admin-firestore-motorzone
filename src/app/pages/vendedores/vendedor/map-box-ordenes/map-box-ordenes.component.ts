@@ -92,7 +92,7 @@ export class MapBoxOrdenesComponent implements AfterViewInit, OnDestroy {
         })
       ).subscribe(
         coords => {
-          debugger
+
           const geojsonCoordsByDay: any = chain(coords)
             .groupBy(coord => {
               return moment(coord.timestamp).format('YYYY-MM-DD')

@@ -208,12 +208,12 @@ export class VendedorService {
         // tslint:disable-next-line:forin
         for (const vendedor of this.vendedores) {
 
-          let htmlErrores = '0' // aqui guardo un html q basicamente en capsula el numero de errores en un badge
+          let htmlErrores = '<span>0</span>' // aqui guardo un html q basicamente en capsula el numero de errores en un badge
           const ordenesErr = [] // aqui guardo las ordenes que tienen errores de cada vendedor
           const ordenesPend = [] // aqui guardo las ordenes pendientes, osea las ordenes que aun no se han enviado a sap
           const ordenesVistas = [] // guardo las ordenes marcadas como vistas en la pag de administrador dio-brando
 
-          if (vendedor.ordenes > 0) {
+          if (vendedor.ordenes && vendedor.ordenes.length > 0) {
 
             const ordenes = vendedor.ordenes
             // tslint:disable-next-line:forin
@@ -262,7 +262,7 @@ export class VendedorService {
               'idAsesor': vendedor.idAsesor ? vendedor.idAsesor : `<span class="badge badge-danger">Inactivo</span>`,
               'vendedorData': vendedor,
               'numOrdenes': 0,
-              'numOrdenesErr': 0,
+              'numOrdenesErr': '<span>0</span>',
               'numOrdenesPend': 0,
               'numOrdenesVistas': 0
             })
