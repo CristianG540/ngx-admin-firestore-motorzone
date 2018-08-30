@@ -86,19 +86,26 @@ export class VendedorService {
       const ordenesObserv1 = this.usersRef.valueChanges().subscribe(
         users => {
 
-          const userOrdenesObserv: Observable<any>[] = _.map(users, (user, userKey) => {
-            const ordenesRef: AngularFirestoreCollection<any> = this.angularFirestoreDB.collection(`users/`).doc(user.uid).collection('orders')
-            return ordenesRef.valueChanges().pipe(
-              map(ordenes => {
-                user.ordenes = ordenes
-                return user
-              })
-            )
-          })
+          let userOrdenesObserv: Observable<any>[]
+          try {
+            userOrdenesObserv = _.map(users, (user, userKey) => {
+              const ordenesRef: AngularFirestoreCollection<any> = this.angularFirestoreDB.collection(`users/`).doc(user.uid).collection('orders')
+              return ordenesRef.valueChanges().pipe(
+                map(ordenes => {
+                  user.ordenes = ordenes
+                  return user
+                })
+              )
+            })
+          } catch (err) {
+            console.error('"Error al crear los observables de los usuarios" - VendedorService|initFirebase() - /app/@core/vendedor/vendedor.service.ts', err)
+            reject(err)
+          }
           /**
            * El combine last es como el fork join, solo que este no espera a que la subscripciones terminen
            */
           combineLatest(userOrdenesObserv).subscribe(data => {
+
             console.log('cambios en el stream', data)
             this.vendedores = data
             resolve(data)
