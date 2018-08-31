@@ -25,8 +25,8 @@ export const MENU_ITEMS: NbMenuItem[] = [
         link: '/pages/clientes/mapa-clientes'
       }
     ]
-  },
-  {
+  }
+  /* {
     title: 'Auth',
     icon: 'nb-locked',
     children: [
@@ -47,5 +47,5 @@ export const MENU_ITEMS: NbMenuItem[] = [
         link: '/auth/reset-password'
       }
     ]
-  }
+  } */
 ]
